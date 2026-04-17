@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clinical Decision Support - Keperawatan</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #eef6f9;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 350px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .reset {
+            background: #e74c3c;
+        }
+        .hasil-card {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            width: 400px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>🩺 Clinical Decision Support (Diagnosis Keperawatan)</h1>
+
+<div class="container">
+
+    <div class="card">
+        <h3>Data Pasien</h3>
+        Nama: <input type="text" id="nama"><br><br>
+        Umur: <input type="number" id="umur"><br><br>
+
+        <h3>Keluhan</h3>
+        <input type="checkbox" id="sesak"> Sesak Napas<br>
+        <input type="checkbox" id="nyeri"> Nyeri<br>
+        <input type="checkbox" id="cemas"> Cemas<br>
+        <input type="checkbox" id="lelah"> Lelah<br><br>
+
+        <h3>Tanda Vital</h3>
+        RR: <input type="number" id="rr"><br><br>
+        SpO2: <input type="number" id="spo2"><br><br>
+
+        <button onclick="analisis()">Analisis</button>
+        <button class="reset" onclick="resetForm()">Reset</button>
+    </div>
+
+    <div class="hasil-card">
+        <h3>Hasil Analisis</h3>
+        <div id="output"></div>
+    </div>
+
+</div>
+
+<script>
+function analisis() {
+    let sesak = document.getElementById("sesak").checked;
+    let nyeri = document.getElementById("nyeri").checked;
+    let cemas = document.getElementById("cemas").checked;
+    let lelah = document.getElementById("lelah").checked;
+
+    let rr = parseInt(document.getElementById("rr").value) || 0;
+    let spo2 = parseInt(document.getElementById("spo2").value) || 100;
+
+    let hasil = [];
+
+    // 🔥 Sistem skor
+    let skorGas = 0;
+    if (sesak) skorGas += 2;
+    if (rr > 24) skorGas += 2;
+    if (spo2 < 95) skorGas += 3;
+
+    if (skorGas >= 4) {
+        hasil.push(`
+        <b>Gangguan Pertukaran Gas</b><br>
+        Skor: ${skorGas}<br>
+        Intervensi:
+        <ul>
+            <li>Monitor respirasi</li>
+            <li>Berikan oksigen</li>
+            <li>Posisi semi fowler</li>
+        </ul>
+        `);
+    }
+
+    if (nyeri) {
+        hasil.push(`
+        <b>Nyeri Akut</b>
+        <ul>
+            <li>Kaji nyeri</li>
+            <li>Berikan analgesik</li>
+        </ul>
+        `);
+    }
+
+    if (cemas) {
+        hasil.push(`
+        <b>Ansietas</b>
+        <ul>
+            <li>Dukungan emosional</li>
+            <li>Teknik relaksasi</li>
+        </ul>
+        `);
+    }
+
+    if (lelah) {
+        hasil.push(`
+        <b>Intoleransi Aktivitas</b>
+        <ul>
+            <li>Monitor kelelahan</li>
+            <li>Atur aktivitas</li>
+        </ul>
+        `);
+    }
+
+    if (hasil.length === 0) {
+        hasil.push("Diagnosis tidak ditemukan");
+    }
+
+    document.getElementById("output").innerHTML = hasil.join("<hr>");
+}
+
+// 🔄 Reset
+function resetForm() {
+    document.querySelectorAll("input").forEach(el => {
+        if (el.type === "checkbox") el.checked = false;
+        else el.value = "";
+    });
+    document.getElementById("output").innerHTML = "";
+}
+</script>
+
+</body>
+</html>
