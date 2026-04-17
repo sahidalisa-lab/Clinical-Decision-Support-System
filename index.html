@@ -1,27 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Clinical Decision Support - Keperawatan</title>
+    <title>CDSS Keperawatan</title>
+
     <style>
         body {
             font-family: Arial;
             background: #eef6f9;
             padding: 20px;
+            max-width: 900px;
+            margin: auto;
         }
+
+        h1 {
+            color: #2c3e50;
+        }
+
         .container {
             display: flex;
             gap: 20px;
+            flex-wrap: wrap;
         }
-        .card {
+
+        .card, .hasil-card {
             background: white;
             padding: 20px;
             border-radius: 10px;
             width: 350px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        h1 {
-            color: #2c3e50;
-        }
+
         button {
             background: #3498db;
             color: white;
@@ -29,25 +37,31 @@
             border: none;
             border-radius: 5px;
             margin-top: 10px;
+            cursor: pointer;
         }
-        button:hover {
-            background: #2980b9;
-        }
+
         .reset {
             background: #e74c3c;
         }
-        .hasil-card {
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 10px;
-            width: 400px;
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
         }
     </style>
 </head>
 
 <body>
 
-<h1>🩺 Clinical Decision Support (Diagnosis Keperawatan)</h1>
+<h1>🩺 Sistem Penentuan Diagnosis Keperawatan</h1>
+<p><b>Berdasarkan SDKI</b></p>
+
+<p>
+Website ini merupakan <i>Clinical Decision Support System</i> sederhana 
+untuk membantu perawat menentukan diagnosis keperawatan berdasarkan indikator mayor dan minor.
+</p>
+
+<hr>
 
 <div class="container">
 
@@ -60,11 +74,13 @@
         <input type="checkbox" id="sesak"> Sesak Napas<br>
         <input type="checkbox" id="nyeri"> Nyeri<br>
         <input type="checkbox" id="cemas"> Cemas<br>
-        <input type="checkbox" id="lelah"> Lelah<br><br>
+        <input type="checkbox" id="lelah"> Lelah<br>
+        <input type="checkbox" id="demam"> Demam<br><br>
 
         <h3>Tanda Vital</h3>
         RR: <input type="number" id="rr"><br><br>
         SpO2: <input type="number" id="spo2"><br><br>
+        Suhu: <input type="number" id="suhu"><br><br>
 
         <button onclick="analisis()">Analisis</button>
         <button class="reset" onclick="resetForm()">Reset</button>
@@ -78,65 +94,95 @@
 </div>
 
 <script>
-function analisis() {
-    let sesak = document.getElementById("sesak").checked;
-    let nyeri = document.getElementById("nyeri").checked;
-    let cemas = document.getElementById("cemas").checked;
-    let lelah = document.getElementById("lelah").checked;
+const diagnosaSDKI = [
 
-    let rr = parseInt(document.getElementById("rr").value) || 0;
-    let spo2 = parseInt(document.getElementById("spo2").value) || 100;
+{
+    nama: "Gangguan Pertukaran Gas",
+    mayor: ["Sesak napas", "SpO2 < 95%"],
+    minor: ["RR meningkat"],
+    cek: (d) => d.sesak && d.spo2 < 95,
+    intervensi: ["Monitor respirasi", "Berikan oksigen", "Posisi semi fowler"]
+},
+
+{
+    nama: "Nyeri Akut",
+    mayor: ["Nyeri"],
+    minor: [],
+    cek: (d) => d.nyeri,
+    intervensi: ["Kaji nyeri", "Berikan analgesik"]
+},
+
+{
+    nama: "Ansietas",
+    mayor: ["Cemas"],
+    minor: ["Gelisah"],
+    cek: (d) => d.cemas,
+    intervensi: ["Dukungan emosional", "Teknik relaksasi"]
+},
+
+{
+    nama: "Intoleransi Aktivitas",
+    mayor: ["Lelah"],
+    minor: ["Kelemahan"],
+    cek: (d) => d.lelah,
+    intervensi: ["Monitor kelelahan", "Atur aktivitas"]
+},
+
+{
+    nama: "Risiko Infeksi",
+    mayor: ["Demam"],
+    minor: ["Suhu > 38°C"],
+    cek: (d) => d.demam && d.suhu > 38,
+    intervensi: ["Monitor suhu", "Jaga kebersihan", "Observasi infeksi"]
+},
+
+{
+    nama: "Gangguan Pola Tidur",
+    mayor: ["Sulit tidur"],
+    minor: ["Cemas", "Lelah"],
+    cek: (d) => d.cemas && d.lelah,
+    intervensi: ["Ciptakan lingkungan nyaman", "Atur jadwal tidur"]
+},
+
+{
+    nama: "Risiko Jatuh",
+    mayor: ["Usia lanjut"],
+    minor: ["Lelah"],
+    cek: (d) => d.umur > 60 && d.lelah,
+    intervensi: ["Pasang side rail", "Edukasi pasien"]
+}
+
+];
+
+function analisis() {
+
+    let data = {
+        sesak: document.getElementById("sesak").checked,
+        nyeri: document.getElementById("nyeri").checked,
+        cemas: document.getElementById("cemas").checked,
+        lelah: document.getElementById("lelah").checked,
+        demam: document.getElementById("demam").checked,
+        rr: parseInt(document.getElementById("rr").value) || 0,
+        spo2: parseInt(document.getElementById("spo2").value) || 100,
+        suhu: parseFloat(document.getElementById("suhu").value) || 36,
+        umur: parseInt(document.getElementById("umur").value) || 0
+    };
 
     let hasil = [];
 
-    // 🔥 Sistem skor
-    let skorGas = 0;
-    if (sesak) skorGas += 2;
-    if (rr > 24) skorGas += 2;
-    if (spo2 < 95) skorGas += 3;
-
-    if (skorGas >= 4) {
-        hasil.push(`
-        <b>Gangguan Pertukaran Gas</b><br>
-        Skor: ${skorGas}<br>
-        Intervensi:
-        <ul>
-            <li>Monitor respirasi</li>
-            <li>Berikan oksigen</li>
-            <li>Posisi semi fowler</li>
-        </ul>
-        `);
-    }
-
-    if (nyeri) {
-        hasil.push(`
-        <b>Nyeri Akut</b>
-        <ul>
-            <li>Kaji nyeri</li>
-            <li>Berikan analgesik</li>
-        </ul>
-        `);
-    }
-
-    if (cemas) {
-        hasil.push(`
-        <b>Ansietas</b>
-        <ul>
-            <li>Dukungan emosional</li>
-            <li>Teknik relaksasi</li>
-        </ul>
-        `);
-    }
-
-    if (lelah) {
-        hasil.push(`
-        <b>Intoleransi Aktivitas</b>
-        <ul>
-            <li>Monitor kelelahan</li>
-            <li>Atur aktivitas</li>
-        </ul>
-        `);
-    }
+    diagnosaSDKI.forEach(d => {
+        if (d.cek(data)) {
+            hasil.push(`
+            <b>${d.nama}</b><br>
+            <u>Indikator Mayor:</u>
+            <ul>${d.mayor.map(m => `<li>${m}</li>`).join("")}</ul>
+            <u>Indikator Minor:</u>
+            <ul>${d.minor.map(m => `<li>${m}</li>`).join("")}</ul>
+            <u>Intervensi:</u>
+            <ul>${d.intervensi.map(i => `<li>${i}</li>`).join("")}</ul>
+            `);
+        }
+    });
 
     if (hasil.length === 0) {
         hasil.push("Diagnosis tidak ditemukan");
@@ -145,7 +191,6 @@ function analisis() {
     document.getElementById("output").innerHTML = hasil.join("<hr>");
 }
 
-// 🔄 Reset
 function resetForm() {
     document.querySelectorAll("input").forEach(el => {
         if (el.type === "checkbox") el.checked = false;
@@ -154,6 +199,12 @@ function resetForm() {
     document.getElementById("output").innerHTML = "";
 }
 </script>
+
+<footer>
+<hr>
+<p>Dibuat oleh: Sahidah</p>
+<p>Mahasiswa Keperawatan</p>
+</footer>
 
 </body>
 </html>
